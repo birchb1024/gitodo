@@ -12,7 +12,7 @@ function list () (
     #
     cd $TODO_DIR &&
     local current_branch=$(git --git-dir=$TODO_GIT_DIR symbolic-ref HEAD | cut -d/ -f3)
-    git --git-dir=$TODO_GIT_DIR for-each-ref --format='%(refname:short)' refs/heads/* | fzf --header="Doing: ${current_branch}" -e --preview='git --git-dir=$TODO_GIT_DIR log --abbrev-commit --decorate --format=format:"- %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" {}' >/dev/null
+    git --git-dir=$TODO_GIT_DIR for-each-ref --format='%(refname:short)' refs/heads/* | fzf --header="Doing: ${current_branch}" -1 -e --preview='git --git-dir=$TODO_GIT_DIR log --abbrev-commit --decorate --format=format:"- %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" {}' >/dev/null
 )
 function did () (
     #
@@ -43,9 +43,9 @@ function what () (
 )
 function nb () (
     #
-    # Add a one-line commit record to the current branch
+    # Add a one-line comment record to the current branch
     #
-    # Example: 
+    # Example:
     #
     #   $ nb Linus says sorry
     #
@@ -54,36 +54,45 @@ function nb () (
 )
 function memo () (
     #
-    # Add a multi-line commit record to the current branch
+    # Add a multi-line commit to the current item
     #
     cd $TODO_DIR &&
     git --git-dir=$TODO_GIT_DIR commit --allow-empty
 )
 function todo () (
     #
-    # Create a new item todo 
+    # Create a new item todo
     #
-    # Example: 
+    # Example:
     #
     #   $ todo Solve world hunger
     #
     cd $TODO_DIR &&
     local current_branch=$(git --git-dir=$TODO_GIT_DIR status | head -1 | sed 's;On branch ;;' )
     local task_name=$(echo "$*" | tr ' ' '_')
-    git --git-dir=$TODO_GIT_DIR checkout --orphan $task_name && 
+    git --git-dir=$TODO_GIT_DIR checkout --orphan $task_name &&
     git --git-dir=$TODO_GIT_DIR commit --allow-empty -m "Added $task_name"
     git --git-dir=$TODO_GIT_DIR checkout $current_branch
 )
 
 function fin () (
     #
-    # Finish an item, remove it from the list.
+    # Finish an item, remove it from the list. Optionally provide an inital search string.
     #
+    # Example:
+    #
+    #   $ fin hunger
+    #
+    local pattern="${1}"
     cd $TODO_DIR &&
-    local current_branch=$(git --git-dir=$TODO_GIT_DIR for-each-ref --format='%(refname:short)' refs/heads/* | fzf -e)
+    local current_branch=$(git --git-dir=$TODO_GIT_DIR for-each-ref --format='%(refname:short)' refs/heads/* | fzf -1 -e -q "${pattern}")
+    if [ "${current_branch}" = "" ] ; then
+        echo "Nothing selected"
+        return
+    fi
     git --git-dir=$TODO_GIT_DIR checkout $current_branch
     git --git-dir=$TODO_GIT_DIR commit --allow-empty -m "Finished $current_branch"
-    git --git-dir=$TODO_GIT_DIR tag -f -m 'DONE' -a $current_branch && 
+    git --git-dir=$TODO_GIT_DIR tag -f -m 'DONE' -a $current_branch &&
     git --git-dir=$TODO_GIT_DIR checkout master &&
     git --git-dir=$TODO_GIT_DIR branch -D $current_branch
 )
