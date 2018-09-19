@@ -30,7 +30,7 @@ did
 
 doing
 
-     Choose a new active branch , provide a string to search for in the liost of items
+     Choose a new active branch , provide a string to search for in the list of items
 
      Example:
 
