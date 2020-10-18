@@ -1,7 +1,20 @@
 # gitodo
 Use Git to store and update todo lists and issues.
 
+
 ## Installation
+
+### Prerequisites
+
+Install `fzf` see [link](https://github.com/junegunn/fzf#installation)
+
+or 
+
+```
+go get -u github.com/junegunn/fzf
+```
+
+## Install gitodo
 
 * Clone this repo
 * Install fzf (https://github.com/junegunn/fzf)
