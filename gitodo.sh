@@ -1,12 +1,14 @@
 #!/bin/bash
 #
 # Todo List in Git
-#
-# Set TODO_DIR to the directory which you want to use for items
-#
-export TODO_SCRIPT="${BASH_SOURCE[0]}"
-export TODO_DIR="${TODO_DIR:-"$PWD"}"
-export TODO_GIT_DIR="$TODO_DIR"/.git
+function gitodo-init {
+    #
+    # Set TODO_DIR to the directory which you want to use for items
+    #
+    export TODO_DIR="$PWD"
+    export TODO_GIT_DIR="$TODO_DIR"/.git
+    echo "Using $TODO_DIR"
+}
 
 function list () (
     #
@@ -36,8 +38,14 @@ function doing () (
     #   $ doing world
     #
     local pattern="${1}"
-    cd "$TODO_DIR" &&
-    git --git-dir="$TODO_GIT_DIR" checkout "$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(committerdate:relative) %(refname:short)' refs/heads | fzf -1 -e -q "${pattern}" | awk '{print $NF}' )"
+    cd "$TODO_DIR"
+    if [[ "$(git clean -xn | grep 'Would remove')" != "" ]]
+    then
+        echo "Workstation not clean - Files not checked in or ignored"
+        git status --short --ignored --untracked-files
+        return 1
+    fi
+    git --git-dir="$TODO_GIT_DIR" checkout "$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=-1)' refs | sort -u | fzf -1 -e -q "${pattern}" | awk '{print $NF}' )"
 )
 
 function what () (
@@ -120,10 +128,16 @@ function recent() {
     git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate refs/heads --format '%(color:yellow) %(committerdate:short) %(color:white) %(refname:short)' | tr '_' ' '
 }
 
-function gitodo() {
+function gitodo {
     #
     # HELP - Report these commands and what they do
     #
     grep function -A 2 --no-group-separator "${TODO_SCRIPT}" | grep -v grep | sed 's;function ;;' | tr -d '#(){}' | sed '/^\s*$/d'
 }
 
+export TODO_SCRIPT="${BASH_SOURCE[0]}"
+gitodo-init
+
+# TOIT Items (Do this when I get a Round Toit - a square one won't do ;-)
+# TOIT - rewrite in Go
+# TOIT - make the init function create a .git repo with empty master perhaps
