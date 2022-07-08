@@ -14,6 +14,8 @@ or
 go get -u github.com/junegunn/fzf
 ```
 
+For iOS, install GNU grep with ```brew install grep```
+
 ## Install gitodo
 
 * Clone this repo

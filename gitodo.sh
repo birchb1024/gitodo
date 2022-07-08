@@ -39,7 +39,7 @@ function doing () (
     #
     local pattern="${1}"
     cd "$TODO_DIR"
-    if [[ "$(git clean -xn | grep 'Would remove')" != "" ]]
+    if [[ "$(git clean -xn | ggrep 'Would remove')" != "" ]]
     then
         echo "Workstation not clean - Files not checked in or ignored"
         git status --short --ignored --untracked-files
@@ -132,7 +132,7 @@ function gitodo {
     #
     # HELP - Report these commands and what they do
     #
-    grep function -A 2 --no-group-separator "${TODO_SCRIPT}" | grep -v grep | sed 's;function ;;' | tr -d '#(){}' | sed '/^\s*$/d'
+    ggrep function -A 2 --no-group-separator "${TODO_SCRIPT}" | ggrep -v ggrep | sed 's;function ;;' | tr -d '#(){}' | sed '/^\s*$/d'
 }
 
 export TODO_SCRIPT="${BASH_SOURCE[0]}"
