@@ -93,7 +93,7 @@ function todo () (
     current_branch="$(git --git-dir="$TODO_GIT_DIR" status | head -1 | sed 's;On branch ;;' )"
     local task_name
     task_name=$(echo "$*" | tr ' ' '_')
-    git --git-dir="$TODO_GIT_DIR" checkout --orphan "$task_name" master &&
+    git --git-dir="$TODO_GIT_DIR" checkout --orphan "$task_name" trunk &&
     git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "New task: $*"
     git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
 )
@@ -110,14 +110,14 @@ function fin () (
     cd "$TODO_DIR" &&
     local current_branch
     current_branch=$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads | fzf -1 -e -q "${pattern}")
-    if [[ "${current_branch}" == "" || "${current_branch}" == "master" ]] ; then
+    if [[ "${current_branch}" == "" || "${current_branch}" == "trunk" ]] ; then
         echo "Nothing selected"
         return
     fi
     git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
     git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "Finished $(echo "$current_branch" | tr '_' ' ')"
     git --git-dir="$TODO_GIT_DIR" tag -f -m "DONE $current_branch" -a "$current_branch" &&
-    git --git-dir="$TODO_GIT_DIR" checkout master &&
+    git --git-dir="$TODO_GIT_DIR" checkout trunk &&
     git --git-dir="$TODO_GIT_DIR" branch -D "$current_branch"
 )
 
@@ -136,8 +136,7 @@ function gitodo {
 }
 
 export TODO_SCRIPT="${BASH_SOURCE[0]}"
-gitodo-init
 
-# TOIT Items (Do this when I get a Round Toit - a square one won't do ;-)
+# Items (Do this when I get a Round Toit - a square one won't do ;-)
 # TOIT - rewrite in Go
-# TOIT - make the init function create a .git repo with empty master perhaps
+# TOIT - make the init function create a .git repo with empty trunk perhaps
