@@ -18,7 +18,7 @@ function list () (
     local current_branch
     current_branch=$(git --git-dir="$TODO_GIT_DIR" symbolic-ref HEAD | cut -d/ -f3)
     #shellcheck disable=SC2016
-    git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads | fzf --header="Doing: ${current_branch}" -1 -e --preview='git --git-dir="$TODO_GIT_DIR" log --abbrev-commit --decorate --format=format:"- %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" {}' > /dev/null
+    git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | fzf --header="Doing: ${current_branch}" -1 -e --preview='git --git-dir="$TODO_GIT_DIR" log --abbrev-commit --decorate --format=format:"- %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" {}' > /dev/null
 )
 
 function did () (
@@ -78,7 +78,7 @@ function memo () (
 )
 function todo () (
     #
-    # Create a new item todo
+    # Create a new item to be done - push up to orgin
     #
     # Example:
     #
@@ -94,7 +94,8 @@ function todo () (
     local task_name
     task_name=$(echo "$*" | tr ' ' '_')
     git --git-dir="$TODO_GIT_DIR" checkout --orphan "$task_name" trunk &&
-    git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "New task: $*"
+	git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "New task: $*" &&
+        git --git-dir="$TODO_GIT_DIR" push --set-upstream origin "$current_branch"
     git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
 )
 
@@ -109,7 +110,7 @@ function fin () (
     local pattern="${1}"
     cd "$TODO_DIR" &&
     local current_branch
-    current_branch=$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads | fzf -1 -e -q "${pattern}")
+    current_branch=$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | fzf -1 -e -q "${pattern}")
     if [[ "${current_branch}" == "" || "${current_branch}" == "trunk" ]] ; then
         echo "Nothing selected"
         return
@@ -117,8 +118,10 @@ function fin () (
     git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
     git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "Finished $(echo "$current_branch" | tr '_' ' ')"
     git --git-dir="$TODO_GIT_DIR" tag -f -m "DONE $current_branch" -a "$current_branch" &&
-    git --git-dir="$TODO_GIT_DIR" checkout trunk &&
-    git --git-dir="$TODO_GIT_DIR" branch -D "$current_branch"
+	git --git-dir="$TODO_GIT_DIR" push origin --tags "$current_branch" &&
+	git --git-dir="$TODO_GIT_DIR" checkout trunk &&
+	git --git-dir="$TODO_GIT_DIR" push origin --delete refs/heads/"$current_branch" &&
+	git --git-dir="$TODO_GIT_DIR" branch -D refs/heads/"$current_branch"
 )
 
 function recent() {
