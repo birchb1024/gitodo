@@ -45,7 +45,7 @@ function doing () (
         git status --short --ignored --untracked-files
         return 1
     fi
-    git --git-dir="$TODO_GIT_DIR" checkout "$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=-1)' refs | sort -u | fzf -1 -e -q "${pattern}" | awk '{print $NF}' )"
+    git --git-dir="$TODO_GIT_DIR" checkout "$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | sort -u | fzf -1 -e -q "${pattern}" | awk '{print $NF}' )"
 )
 
 function what () (
