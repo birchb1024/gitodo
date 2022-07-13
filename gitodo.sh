@@ -117,11 +117,12 @@ function fin () (
     fi
     git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
     git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "Finished $(echo "$current_branch" | tr '_' ' ')"
-    git --git-dir="$TODO_GIT_DIR" tag -f -m "DONE $current_branch" -a "$current_branch" &&
-	git --git-dir="$TODO_GIT_DIR" push origin --tags "$current_branch" &&
+    git --git-dir="$TODO_GIT_DIR" push --set-upstream origin refs/heads/"$current_branch"
+    git --git-dir="$TODO_GIT_DIR" tag -f -m "Completed $current_branch" -a "Completed/$current_branch" $(git rev-parse refs/heads/"$current_branch") &&
+	git --git-dir="$TODO_GIT_DIR" push origin refs/tags/"$current_branch" &&
 	git --git-dir="$TODO_GIT_DIR" checkout trunk &&
-	git --git-dir="$TODO_GIT_DIR" push origin --delete refs/heads/"$current_branch" &&
-	git --git-dir="$TODO_GIT_DIR" branch -D refs/heads/"$current_branch"
+	(git --git-dir="$TODO_GIT_DIR" push origin --delete refs/heads/"$current_branch" || true ;
+	git --git-dir="$TODO_GIT_DIR" branch -D "$current_branch" || true )
 )
 
 function recent() {
