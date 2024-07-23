@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-ScriptDir="$(dirname "${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}")"
 # Todo List in Git
 function ,gitodo-init {
     #
@@ -210,7 +209,7 @@ function ,gitodo_jira () (
     local repo_url
 
     issue_key=$1
-    issue_name="$("${ScriptDir}"/,get-issue-branch.mjs --key "$issue_key")"
+    issue_name="$("${GITODO_SRC_DIR}"/,get-issue-branch.mjs --key "$issue_key")"
     repo_url="$(cd "${TODO_GIT_DIR}"; git config --local --get remote.origin.url)"
     new_repo_dir="$(readlink -f "$(dirname "$TODO_DIR")")/$issue_name"
 
@@ -220,5 +219,5 @@ function ,gitodo_jira () (
 
 function ,jira-issue-branch () (
     set -euo pipefail
-    "${ScriptDir}"/,get-issue-branch.mjs --key "$1"
+    "${GITODO_SRC_DIR}"/,get-issue-branch.mjs --key "$1"
 )
