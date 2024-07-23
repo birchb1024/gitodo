@@ -1,7 +1,8 @@
 #!/bin/bash
 #
+ScriptDir="$(dirname "${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}")"
 # Todo List in Git
-function gitodo-init {
+function ,gitodo-init {
     #
     # Set TODO_DIR to the directory which you want to use for items
     #
@@ -10,7 +11,7 @@ function gitodo-init {
     echo "Using $TODO_DIR"
 }
 
-function list () (
+function ,list () (
     #
     # List all open items and display a summary of the history
     #
@@ -21,7 +22,7 @@ function list () (
     git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | fzf --header="Doing: ${current_branch}" -1 -e --preview='git --git-dir="$TODO_GIT_DIR" log --abbrev-commit --decorate --format=format:"- %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" {}' > /dev/null
 )
 
-function did () (
+function ,did () (
     #
     # Print history of the current item
     #
@@ -29,7 +30,7 @@ function did () (
     git --git-dir="$TODO_GIT_DIR" log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)'
 )
 
-function doing () (
+function ,doing () (
     #
     # Choose a new active branch , provide a string to search for in the list of items
     #
@@ -48,7 +49,7 @@ function doing () (
     git --git-dir="$TODO_GIT_DIR" checkout "$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | sort -u | fzf -1 -e -q "${pattern}" | awk '{print $NF}' )"
 )
 
-function what () (
+function ,what () (
     #
     # Print the active item
     #
@@ -58,7 +59,7 @@ function what () (
     echo "$current_branch"
 )
 
-function nb () (
+function ,nb () (
     #
     # Add a one-line comment record to the current branch
     #
@@ -69,14 +70,14 @@ function nb () (
     cd "$TODO_DIR" &&
     git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "$*"
 )
-function memo () (
+function ,memo () (
     #
     # Add a multi-line commit to the current item
     #
     cd "$TODO_DIR" &&
     git --git-dir="$TODO_GIT_DIR" commit --allow-empty
 )
-function todo () (
+function ,todo () (
     #
     # Create a new item to be done - push up to orgin
     #
@@ -99,7 +100,7 @@ function todo () (
     git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
 )
 
-function fin () (
+function ,fin () (
     #
     # Finish an item, remove it from the list. Optionally provide an inital search string.
     #
@@ -125,14 +126,14 @@ function fin () (
 	git --git-dir="$TODO_GIT_DIR" branch -D "$current_branch" || true )
 )
 
-function recent() {
+function ,recent() {
     #
     # Report the history of recently used items - hint use | less -r
     #
     git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate refs/heads --format '%(color:yellow) %(committerdate:short) %(color:white) %(refname:short)' | tr '_' ' '
 }
 
-function gitodo {
+function ,help {
     #
     # HELP - Report these commands and what they do
     #
@@ -143,4 +144,81 @@ export TODO_SCRIPT="${BASH_SOURCE[0]}"
 
 # Items (Do this when I get a Round Toit - a square one won't do ;-)
 # TOIT - rewrite in Go
-# TOIT - make the init function create a .git repo with empty trunk perhaps
+# TOIT - make the init fu nction create a .git repo with empty trunk perhaps
+
+function ,gitodo_ws_new () (
+    #
+    # Within a workspace create a new item branch - push up to orgin
+    #
+    # Example:
+    #
+    #   $ gitodo_ws_new Solve world hunger
+    #
+    if [[ "$#" == "0" ]]; then
+        echo "Nothing added"
+        return 0
+    fi
+    local topic_name
+    topic_name="$(echo $* | tr -s '[:blank:][:special:][:punct:]' '-')"
+    git checkout --orphan "$topic_name" trunk && \
+    git commit --allow-empty -m "New task: $*" && \
+    git push --set-upstream origin "$topic_name"
+)
+
+function ,gitodo_workspace () {
+    #
+    # Create a new workspace for a work item
+    #
+    # $* - the name of the work item
+    #
+    if [[ "$#" == "0" ]]; then
+        echo "ERROR: missing topic name"
+        return 0
+    fi
+    local topic_name
+    topic_name="$(echo $* | tr -s '[:blank:][:special:][:punct:]' '-')"
+    repo_url="$(cd ${TODO_GIT_DIR}; git config --local --get remote.origin.url)"
+    new_repo_dir="$(readlink -f $(dirname $TODO_DIR))/$topic_name"
+    git clone "$repo_url" "$new_repo_dir"
+    cd "$new_repo_dir" &&
+    ,gitodo_ws_new "$topic_name"
+} 
+
+function ,gitodo_jira () (
+    set -euo pipefail
+    #
+    # Create a new workspace for a Jira work item
+    #
+    # $1 - the key of the Jira e.g. SUB-1234
+    #
+    # Example:
+    #
+    # echo $TODO_GIT_DIR $TODO_DIR
+    # /Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/trunk/.git /Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/trun
+    # $ ,gitodo_jira SUB-8918
+    # Cloning into '/Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/SUB-8918-olympics-code-freeze-git-branch-strategy-documentation--demo'...
+    # remote: Enumerating objects: 329, done.
+    # . . .
+
+    if [[ "$#" == "0" ]]; then
+        echo "ERROR: missing Jira key"
+        return 0
+    fi
+    local issue_key
+    local issue_name
+    local new_repo_dir
+    local repo_url
+
+    issue_key=$1
+    issue_name="$("${ScriptDir}"/,get-issue-branch.mjs --key "$issue_key")"
+    repo_url="$(cd "${TODO_GIT_DIR}"; git config --local --get remote.origin.url)"
+    new_repo_dir="$(readlink -f "$(dirname "$TODO_DIR")")/$issue_name"
+
+    git clone "$repo_url" "$new_repo_dir"
+    cd "$new_repo_dir" && ,gitodo_ws_new "$issue_name"
+)
+
+function ,jira-issue-branch () (
+    set -euo pipefail
+    "${ScriptDir}"/,get-issue-branch.mjs --key "$1"
+)
