@@ -33,10 +33,15 @@ if (Top.includes('errorMessages') || Top.includes('errors') || !Top.includes('fi
 }
 
 let Summary = Body.fields.summary
-process.stdout.write(`${Key}-${Summary
-  .replace(/\[.*\]/g,'')
-  .replace(/\(.*\)/g,'')
-  .trim()
-  .toLowerCase()
-  .replaceAll(' ', '-')
-  .replaceAll(',', '-') }`)
+let CleanedSummary = Summary
+.replace(/\[.*\]/g,'') // square brackets
+.replace(/\(.*\)/g,'') // round brackets
+.toLowerCase()
+.replaceAll('&', '-')          // ampersand
+.replace(/\s/g, '-')           // spaces
+.replaceAll(',', '-')          // commas
+.replace(/-+/g, '-')           // consequtive hyphens
+.trim()
+
+process.stdout.write(`${Key}-${CleanedSummary}`)    
+
