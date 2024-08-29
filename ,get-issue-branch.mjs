@@ -32,16 +32,15 @@ if (Top.includes('errorMessages') || Top.includes('errors') || !Top.includes('fi
   process.exit(1)
 }
 
-let Summary = Body.fields.summary
+let Summary = `${Key.toUpperCase()}-${Body.fields.summary.toLowerCase()}`
 let CleanedSummary = Summary
-.replace(/\[.*\]/g,'') // square brackets
-.replace(/\(.*\)/g,'') // round brackets
-.toLowerCase()
-.replaceAll('&', '-')          // ampersand
-.replace(/\s/g, '-')           // spaces
-.replaceAll(',', '-')          // commas
-.replace(/-+/g, '-')           // consequtive hyphens
-.trim()
+  .replace(/\[.*\]/g,'')         // square brackets
+  .replace(/\(.*\)/g,'')         // round brackets
+  .replaceAll('&', '-')          // ampersand
+  .replace(/\s/g, '-')           // spaces
+  .replaceAll(',', '-')          // commas
+  .replace(/-+/g, '-')           // consequtive hyphens
+  .trim()
 
-process.stdout.write(`${Key}-${CleanedSummary}`)    
+process.stdout.write(CleanedSummary)    
 
