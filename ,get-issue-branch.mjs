@@ -32,7 +32,7 @@ if (Top.includes('errorMessages') || Top.includes('errors') || !Top.includes('fi
   process.exit(1)
 }
 
-let Summary = `${Key.toUpperCase()}-${Body.fields.summary.toLowerCase()}`
+let Summary = `${Key.toUpperCase()}-${Body.fields.summary.toLowerCase().trim()}`
 let CleanedSummary = Summary
   .replace(/\[.*\]/g,'')         // square brackets
   .replace(/\(.*\)/g,'')         // round brackets
