@@ -3,147 +3,143 @@
 # Todo List in Git
 function ,gitodo-init {
     #
-    # Set TODO_DIR to the directory which you want to use for items
+    # Set TODO_GIT_DIR to the repo which you want to use for items
     #
-    export TODO_DIR="$PWD"
     export TODO_GIT_DIR="$TODO_DIR"/.git
     echo "Using $TODO_DIR"
 }
 
-function ,list () (
-    #
-    # List all open items and display a summary of the history
-    #
-    cd "$TODO_DIR" &&
-    local current_branch
-    current_branch=$(git --git-dir="$TODO_GIT_DIR" symbolic-ref HEAD | cut -d/ -f3)
-    #shellcheck disable=SC2016
-    git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | fzf --header="Doing: ${current_branch}" -1 -e --preview='git --git-dir="$TODO_GIT_DIR" log --abbrev-commit --decorate --format=format:"- %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" {}' > /dev/null
-)
+#~ function ,list () (
+    #~ #
+    #~ # List all open items and display a summary of the history
+    #~ #
+    #~ cd "$TODO_DIR" &&
+    #~ local current_branch
+    #~ current_branch=$(git --git-dir="$TODO_GIT_DIR" symbolic-ref HEAD | cut -d/ -f3)
+    #~ #shellcheck disable=SC2016
+    #~ git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | fzf --header="Doing: ${current_branch}" -1 -e --preview='git --git-dir="$TODO_GIT_DIR" log --abbrev-commit --decorate --format=format:"- %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" {}' > /dev/null
+#~ )
 
-function ,did () (
-    #
-    # Print history of the current item
-    #
-    cd "$TODO_DIR" &&
-    git --git-dir="$TODO_GIT_DIR" log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)'
-)
+#~ function ,did () (
+    #~ #
+    #~ # Print history of the current item
+    #~ #
+    #~ cd "$TODO_DIR" &&
+    #~ git --git-dir="$TODO_GIT_DIR" log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)'
+#~ )
 
-function ,doing () (
-    #
-    # Choose a new active branch , provide a string to search for in the list of items
-    #
-    # Example:
-    #
-    #   $ doing world
-    #
-    local pattern="${1}"
-    cd "$TODO_DIR"
-    if [[ "$(git clean -xn | ggrep 'Would remove')" != "" ]]
-    then
-        echo "Workstation not clean - Files not checked in or ignored"
-        git status --short --ignored --untracked-files
-        return 1
-    fi
-    git --git-dir="$TODO_GIT_DIR" checkout "$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | sort -u | fzf -1 -e -q "${pattern}" | awk '{print $NF}' )"
-)
+#~ function ,doing () (
+    #~ #
+    #~ # Choose a new active branch , provide a string to search for in the list of items
+    #~ #
+    #~ # Example:
+    #~ #
+    #~ #   $ doing world
+    #~ #
+    #~ local pattern="${1}"
+    #~ cd "$TODO_DIR"
+    #~ if [[ "$(git clean -xn | ggrep 'Would remove')" != "" ]]
+    #~ then
+        #~ echo "Workstation not clean - Files not checked in or ignored"
+        #~ git status --short --ignored --untracked-files
+        #~ return 1
+    #~ fi
+    #~ git --git-dir="$TODO_GIT_DIR" checkout "$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | sort -u | fzf -1 -e -q "${pattern}" | awk '{print $NF}' )"
+#~ )
 
-function ,what () (
-    #
-    # Print the active item
-    #
-    cd "$TODO_DIR" &&
-    local current_branch
-    current_branch=$(git --git-dir="$TODO_GIT_DIR" symbolic-ref HEAD | cut -d/ -f3)
-    echo "$current_branch"
-)
+#~ function ,what () (
+    #~ #
+    #~ # Print the active item
+    #~ #
+    #~ cd "$TODO_DIR" &&
+    #~ local current_branch
+    #~ current_branch=$(git --git-dir="$TODO_GIT_DIR" symbolic-ref HEAD | cut -d/ -f3)
+    #~ echo "$current_branch"
+#~ )
 
-function ,nb () (
-    #
-    # Add a one-line comment record to the current branch
-    #
-    # Example:
-    #
-    #   $ nb Linus says sorry
-    #
-    cd "$TODO_DIR" &&
-    git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "$*"
-)
-function ,memo () (
-    #
-    # Add a multi-line commit to the current item
-    #
-    cd "$TODO_DIR" &&
-    git --git-dir="$TODO_GIT_DIR" commit --allow-empty
-)
-function ,todo () (
-    #
-    # Create a new item to be done - push up to orgin
-    #
-    # Example:
-    #
-    #   $ todo Solve world hunger
-    #
-    if [[ "$#" == "0" ]]; then
-        echo "Nothing added"
-        return 0
-    fi
-    cd "$TODO_DIR" &&
-    local current_branch
-    current_branch="$(git --git-dir="$TODO_GIT_DIR" status | head -1 | sed 's;On branch ;;' )"
-    local task_name
-    task_name=$(echo "$*" | tr ' ' '_')
-    git --git-dir="$TODO_GIT_DIR" checkout --orphan "$task_name" trunk &&
-	git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "New task: $*" &&
-        git --git-dir="$TODO_GIT_DIR" push --set-upstream origin "$current_branch"
-    git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
-)
+#~ function ,nb () (
+    #~ #
+    #~ # Add a one-line comment record to the current branch
+    #~ #
+    #~ # Example:
+    #~ #
+    #~ #   $ nb Linus says sorry
+    #~ #
+    #~ cd "$TODO_DIR" &&
+    #~ git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "$*"
+#~ )
+#~ function ,memo () (
+    #~ #
+    #~ # Add a multi-line commit to the current item
+    #~ #
+    #~ cd "$TODO_DIR" &&
+    #~ git --git-dir="$TODO_GIT_DIR" commit --allow-empty
+#~ )
+#~ function ,todo () (
+    #~ #
+    #~ # Create a new item to be done - push up to orgin
+    #~ #
+    #~ # Example:
+    #~ #
+    #~ #   $ todo Solve world hunger
+    #~ #
+    #~ if [[ "$#" == "0" ]]; then
+        #~ echo "Nothing added"
+        #~ return 0
+    #~ fi
+    #~ cd "$TODO_DIR" &&
+    #~ local current_branch
+    #~ current_branch="$(git --git-dir="$TODO_GIT_DIR" status | head -1 | sed 's;On branch ;;' )"
+    #~ local task_name
+    #~ task_name=$(echo "$*" | tr ' ' '_')
+    #~ git --git-dir="$TODO_GIT_DIR" checkout --orphan "$task_name" main &&
+	#~ git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "New task: $*" &&
+        #~ git --git-dir="$TODO_GIT_DIR" push --set-upstream origin "$current_branch"
+    #~ git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
+#~ )
 
-function ,fin () (
-    #
-    # Finish an item, remove it from the list. Optionally provide an inital search string.
-    #
-    # Example:
-    #
-    #   $ fin hunger
-    #
-    local pattern="${1}"
-    cd "$TODO_DIR" &&
-    local current_branch
-    current_branch=$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | fzf -1 -e -q "${pattern}")
-    if [[ "${current_branch}" == "" || "${current_branch}" == "trunk" ]] ; then
-        echo "Nothing selected"
-        return
-    fi
-    git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
-    git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "Finished $(echo "$current_branch" | tr '_' ' ')"
-    git --git-dir="$TODO_GIT_DIR" push --set-upstream origin refs/heads/"$current_branch"
-    git --git-dir="$TODO_GIT_DIR" tag -f -m "Completed $current_branch" -a "Completed/$current_branch" $(git rev-parse refs/heads/"$current_branch") &&
-	git --git-dir="$TODO_GIT_DIR" push origin refs/tags/"$current_branch" &&
-	git --git-dir="$TODO_GIT_DIR" checkout trunk &&
-	(git --git-dir="$TODO_GIT_DIR" push origin --delete refs/heads/"$current_branch" || true ;
-	git --git-dir="$TODO_GIT_DIR" branch -D "$current_branch" || true )
-)
+#~ function ,fin () (
+    #~ #
+    #~ # Finish an item, remove it from the list. Optionally provide an inital search string.
+    #~ #
+    #~ # Example:
+    #~ #
+    #~ #   $ fin hunger
+    #~ #
+    #~ local pattern="${1}"
+    #~ cd "$TODO_DIR" &&
+    #~ local current_branch
+    #~ current_branch=$(git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate --format='%(refname:lstrip=2)' refs/heads | fzf -1 -e -q "${pattern}")
+    #~ if [[ "${current_branch}" == "" || "${current_branch}" == "main" ]] ; then
+        #~ echo "Nothing selected"
+        #~ return
+    #~ fi
+    #~ git --git-dir="$TODO_GIT_DIR" checkout "$current_branch"
+    #~ git --git-dir="$TODO_GIT_DIR" commit --allow-empty -m "Finished $(echo "$current_branch" | tr '_' ' ')"
+    #~ git --git-dir="$TODO_GIT_DIR" push --set-upstream origin refs/heads/"$current_branch"
+    #~ git --git-dir="$TODO_GIT_DIR" tag -f -m "Completed $current_branch" -a "Completed/$current_branch" $(git rev-parse refs/heads/"$current_branch") &&
+	#~ git --git-dir="$TODO_GIT_DIR" push origin refs/tags/"$current_branch" &&
+	#~ git --git-dir="$TODO_GIT_DIR" checkout main &&
+	#~ (git --git-dir="$TODO_GIT_DIR" push origin --delete refs/heads/"$current_branch" || true ;
+	#~ git --git-dir="$TODO_GIT_DIR" branch -D "$current_branch" || true )
+#~ )
 
-function ,recent() {
-    #
-    # Report the history of recently used items - hint use | less -r
-    #
-    git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate refs/heads --format '%(color:yellow) %(committerdate:short) %(color:white) %(refname:short)' | tr '_' ' '
-}
+#~ function ,recent() {
+    #~ #
+    #~ # Report the history of recently used items - hint use | less -r
+    #~ #
+    #~ git --git-dir="$TODO_GIT_DIR" for-each-ref --sort=-committerdate refs/heads --format '%(color:yellow) %(committerdate:short) %(color:white) %(refname:short)' | tr '_' ' '
+#~ }
 
-function ,help {
-    #
-    # HELP - Report these commands and what they do
-    #
-    ggrep function -A 2 --no-group-separator "${TODO_SCRIPT}" | ggrep -v ggrep | sed 's;function ;;' | tr -d '#(){}' | sed '/^\s*$/d'
-}
+#~ function ,help {
+    #~ #
+    #~ # HELP - Report these commands and what they do
+    #~ #
+    #~ ggrep function -A 2 --no-group-separator "${TODO_SCRIPT}" | ggrep -v ggrep | sed 's;function ;;' | tr -d '#(){}' | sed '/^\s*$/d'
+#~ }
 
 export TODO_SCRIPT="${BASH_SOURCE[0]}"
 
-# Items (Do this when I get a Round Toit - a square one won't do ;-)
-# TOIT - rewrite in Go
-# TOIT - make the init fu nction create a .git repo with empty trunk perhaps
 
 function ,gitodo_ws_new () (
     #
@@ -151,7 +147,7 @@ function ,gitodo_ws_new () (
     #
     # Example:
     #
-    #   $ gitodo_ws_new Solve world hunger
+    #   $ ,gitodo_ws_new Solve world hunger
     #
     if [[ "$#" == "0" ]]; then
         echo "Nothing added"
@@ -159,14 +155,14 @@ function ,gitodo_ws_new () (
     fi
     local topic_name
     topic_name="$(echo $* | tr -s '[:blank:][:special:][:punct:]' '-')"
-    git checkout --orphan "$topic_name" trunk && \
+    git checkout --orphan "$topic_name" main && \
     git commit --allow-empty -m "New task: $*" && \
     git push --set-upstream origin "$topic_name"
 )
 
 function ,gitodo_workspace () {
     #
-    # Create a new workspace for a work item
+    # Create a new workspace directory for a work item
     #
     # $* - the name of the work item
     #
@@ -183,41 +179,41 @@ function ,gitodo_workspace () {
     ,gitodo_ws_new "$topic_name"
 } 
 
-function ,gitodo_jira () (
-    set -euo pipefail
-    #
-    # Create a new workspace for a Jira work item
-    #
-    # $1 - the key of the Jira e.g. SUB-1234
-    #
-    # Example:
-    #
-    # echo $TODO_GIT_DIR $TODO_DIR
-    # /Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/trunk/.git /Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/trun
-    # $ ,gitodo_jira SUB-8918
-    # Cloning into '/Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/SUB-8918-olympics-code-freeze-git-branch-strategy-documentation--demo'...
-    # remote: Enumerating objects: 329, done.
-    # . . .
+#~ function ,gitodo_jira () (
+    #~ set -euo pipefail
+    #~ #
+    #~ # Create a new workspace for a Jira work item
+    #~ #
+    #~ # $1 - the key of the Jira e.g. SUB-1234
+    #~ #
+    #~ # Example:
+    #~ #
+    #~ # echo $TODO_GIT_DIR $TODO_DIR
+    #~ # /Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/main/.git /Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/trun
+    #~ # $ ,gitodo_jira SUB-8918
+    #~ # Cloning into '/Users/bill.birch/wo/bitbucket.org/ffxblue/bill9birch-todo/SUB-8918-olympics-code-freeze-git-branch-strategy-documentation--demo'...
+    #~ # remote: Enumerating objects: 329, done.
+    #~ # . . .
 
-    if [[ "$#" == "0" ]]; then
-        echo "ERROR: missing Jira key"
-        return 0
-    fi
-    local issue_key
-    local issue_name
-    local new_repo_dir
-    local repo_url
+    #~ if [[ "$#" == "0" ]]; then
+        #~ echo "ERROR: missing Jira key"
+        #~ return 0
+    #~ fi
+    #~ local issue_key
+    #~ local issue_name
+    #~ local new_repo_dir
+    #~ local repo_url
 
-    issue_key=$1
-    issue_name="$("${GITODO_SRC_DIR}"/,get-issue-branch.mjs --key "$issue_key")"
-    repo_url="$(cd "${TODO_GIT_DIR}"; git config --local --get remote.origin.url)"
-    new_repo_dir="$(readlink -f "$(dirname "$TODO_DIR")")/$issue_name"
+    #~ issue_key=$1
+    #~ issue_name="$("${GITODO_SRC_DIR}"/,get-issue-branch.mjs --key "$issue_key")"
+    #~ repo_url="$(cd "${TODO_GIT_DIR}"; git config --local --get remote.origin.url)"
+    #~ new_repo_dir="$(readlink -f "$(dirname "$TODO_DIR")")/$issue_name"
 
-    git clone "$repo_url" "$new_repo_dir"
-    cd "$new_repo_dir" && ,gitodo_ws_new "$issue_name"
-)
+    #~ git clone "$repo_url" "$new_repo_dir"
+    #~ cd "$new_repo_dir" && ,gitodo_ws_new "$issue_name"
+#~ )
 
-function ,jira-issue-branch () (
-    set -euo pipefail
-    "${GITODO_SRC_DIR}"/,get-issue-branch.mjs --key "$1"
-)
+#~ function ,jira-issue-branch () (
+    #~ set -euo pipefail
+    #~ "${GITODO_SRC_DIR}"/,get-issue-branch.mjs --key "$1"
+#~ )
